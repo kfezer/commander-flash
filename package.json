@@ -1,0 +1,119 @@
+{
+  "name": "commander-flash",
+  "displayName": "Commander Flash (unofficial)",
+  "description": "Flash, erase and open a serial console on Silicon Labs boards from VS Code, using Simplicity Commander. No Simplicity Studio project needed.",
+  "version": "0.1.0",
+  "publisher": "commander-flash-community",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "silicon labs",
+    "efr32",
+    "commander",
+    "flash",
+    "embedded"
+  ],
+  "main": "./out/src/extension.js",
+  "activationEvents": [
+    "onView:commanderFlash.devices"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commanderFlash",
+          "title": "Commander Flash",
+          "icon": "$(zap)"
+        }
+      ]
+    },
+    "views": {
+      "commanderFlash": [
+        {
+          "id": "commanderFlash.devices",
+          "name": "Boards"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "commanderFlash.devices",
+        "contents": "Simplicity Commander wasn't found.\n[Set Commander path](command:commanderFlash.setPath)\n[Download Commander](https://www.silabs.com/developer-tools/simplicity-studio/simplicity-commander)",
+        "when": "commanderFlash.state == noCommander"
+      },
+      {
+        "view": "commanderFlash.devices",
+        "contents": "No boards connected. Plug in a board with a USB data cable.\n[Refresh](command:commanderFlash.refresh)\nNeed firmware from a repo?\n[Clone a repository](command:git.clone)",
+        "when": "commanderFlash.state == noBoards"
+      }
+    ],
+    "commands": [
+      { "command": "commanderFlash.refresh", "title": "Refresh", "category": "Commander Flash", "icon": "$(refresh)" },
+      { "command": "commanderFlash.setPath", "title": "Set Commander Path…", "category": "Commander Flash" },
+      { "command": "commanderFlash.flash", "title": "Flash…", "category": "Commander Flash", "icon": "$(zap)" },
+      { "command": "commanderFlash.flashFile", "title": "Flash to Board…", "category": "Commander Flash" },
+      { "command": "commanderFlash.console", "title": "Open Console", "category": "Commander Flash", "icon": "$(terminal)" },
+      { "command": "commanderFlash.checkBootloader", "title": "Check Bootloader", "category": "Commander Flash" },
+      { "command": "commanderFlash.installBootloader", "title": "Install Bootloader", "category": "Commander Flash" },
+      { "command": "commanderFlash.erase", "title": "Erase Board…", "category": "Commander Flash" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "commanderFlash.refresh", "when": "view == commanderFlash.devices", "group": "navigation" }
+      ],
+      "view/item/context": [
+        { "command": "commanderFlash.flash", "when": "view == commanderFlash.devices && viewItem == board", "group": "inline@0" },
+        { "command": "commanderFlash.console", "when": "view == commanderFlash.devices && viewItem == board", "group": "inline@1" },
+        { "command": "commanderFlash.flash", "when": "view == commanderFlash.devices && viewItem == board", "group": "1_flash@0" },
+        { "command": "commanderFlash.console", "when": "view == commanderFlash.devices && viewItem == board", "group": "1_flash@1" },
+        { "command": "commanderFlash.checkBootloader", "when": "view == commanderFlash.devices && viewItem == board", "group": "2_bootloader@0" },
+        { "command": "commanderFlash.installBootloader", "when": "view == commanderFlash.devices && viewItem == board", "group": "2_bootloader@1" },
+        { "command": "commanderFlash.erase", "when": "view == commanderFlash.devices && viewItem == board", "group": "9_danger@0" }
+      ],
+      "explorer/context": [
+        { "command": "commanderFlash.flashFile", "when": "resourceExtname =~ /^\\.(hex|s37)$/i", "group": "navigation@99" }
+      ],
+      "commandPalette": [
+        { "command": "commanderFlash.flashFile", "when": "false" }
+      ]
+    },
+    "configuration": {
+      "title": "Commander Flash",
+      "properties": {
+        "commanderFlash.path": {
+          "type": "string",
+          "default": "",
+          "description": "Full path to the Simplicity Commander executable. Leave empty to search PATH and the usual install locations."
+        },
+        "commanderFlash.autoRefreshSeconds": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "How often to refresh the board list, in seconds. 0 turns auto-refresh off."
+        },
+        "commanderFlash.bootloaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": { "type": "string" },
+          "markdownDescription": "Bootloader image per board ID, e.g. `{ \"2601B\": \"/path/to/bootloader.s37\" }`. Adds to or overrides the bundled ones (`2601B`, `2703A`)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "tsc -p . && node --test out/test/*.test.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.4.0"
+  }
+}

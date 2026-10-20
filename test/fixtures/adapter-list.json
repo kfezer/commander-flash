@@ -1,0 +1,88 @@
+{
+    "result": {
+        "device_count": 2,
+        "devices": [
+            {
+                "adapter_date": "0/0/0",
+                "adapter_description": "EFR32xG24 Explorer Kit Board",
+                "adapter_firmware": "2v0p2b426",
+                "adapter_fpga": "15v15p255b65535",
+                "adapter_id": "2703A",
+                "adapter_in_bootloader": false,
+                "adapter_ip": "255.255.255.255",
+                "adapter_label": "J-Link Silicon Labs",
+                "adapter_name": "BRD2703A Rev. A02",
+                "adapter_nickname": "",
+                "adapter_revision": "A02",
+                "adapter_serial_number": 254410201,
+                "adapter_type": "JLink",
+                "board_count": 1,
+                "boards": [
+                    {
+                        "board_date": "2025/11/3",
+                        "board_description": "EFR32xG24 Explorer Kit Board",
+                        "board_id": "2703A",
+                        "board_name": "BRD2703A Rev. A02",
+                        "board_revision": "A02",
+                        "board_serial": 254410201,
+                        "infer_part": true
+                    }
+                ],
+                "debug_mode": "MCU",
+                "firmware_string": "Silicon Labs J-Link OB compiled Mar 17 2026 15:41:48",
+                "infer_part": true,
+                "serial_number": 440360199,
+                "supported_debug_modes": [
+                    "OFF",
+                    "MCU",
+                    "IN",
+                    "OUT"
+                ],
+                "supports_aem": false,
+                "supports_emucom": false,
+                "supports_ip": false,
+                "supports_vcom": true
+            },
+            {
+                "adapter_date": "0/0/0",
+                "adapter_description": "EFR32xG24 Dev Kit Board",
+                "adapter_firmware": "2v0p2b426",
+                "adapter_fpga": "15v15p255b65535",
+                "adapter_id": "2601B",
+                "adapter_in_bootloader": false,
+                "adapter_ip": "255.255.255.255",
+                "adapter_label": "J-Link Silicon Labs",
+                "adapter_name": "BRD2601B Rev. A01",
+                "adapter_nickname": "",
+                "adapter_revision": "A01",
+                "adapter_serial_number": 252407922,
+                "adapter_type": "JLink",
+                "board_count": 1,
+                "boards": [
+                    {
+                        "board_date": "2025/6/20",
+                        "board_description": "EFR32xG24 Dev Kit Board",
+                        "board_id": "2601B",
+                        "board_name": "BRD2601B Rev. A01",
+                        "board_revision": "A01",
+                        "board_serial": 252407922,
+                        "infer_part": true
+                    }
+                ],
+                "debug_mode": "MCU",
+                "firmware_string": "Silicon Labs J-Link OB compiled Mar 17 2026 15:41:48",
+                "infer_part": true,
+                "serial_number": 440349857,
+                "supported_debug_modes": [
+                    "OFF",
+                    "MCU"
+                ],
+                "supports_aem": false,
+                "supports_emucom": false,
+                "supports_ip": false,
+                "supports_vcom": true
+            }
+        ]
+    },
+    "success": true
+}
