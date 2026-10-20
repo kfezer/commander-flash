@@ -76,12 +76,12 @@
       },
       {
         "command": "commanderFlash.setPath",
-        "title": "Set Commander Path\u2026",
+        "title": "Set Commander Path…",
         "category": "Commander Flash"
       },
       {
         "command": "commanderFlash.installCommander",
-        "title": "Install Simplicity Commander\u2026",
+        "title": "Install Simplicity Commander…",
         "category": "Commander Flash"
       },
       {
@@ -92,19 +92,19 @@
       },
       {
         "command": "commanderFlash.debug",
-        "title": "Debug\u2026",
+        "title": "Debug…",
         "category": "Commander Flash",
         "icon": "$(debug-alt)"
       },
       {
         "command": "commanderFlash.flash",
-        "title": "Flash\u2026",
+        "title": "Flash…",
         "category": "Commander Flash",
         "icon": "$(zap)"
       },
       {
         "command": "commanderFlash.flashFile",
-        "title": "Flash to Board\u2026",
+        "title": "Flash to Board…",
         "category": "Commander Flash"
       },
       {
@@ -125,7 +125,7 @@
       },
       {
         "command": "commanderFlash.erase",
-        "title": "Erase Board\u2026",
+        "title": "Erase Board…",
         "category": "Commander Flash"
       }
     ],
@@ -246,6 +246,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "~1.90.0",
     "@vscode/vsce": "^3.2.0",
+    "ovsx": "^1.3.0",
     "typescript": "^5.4.0"
   },
   "repository": {

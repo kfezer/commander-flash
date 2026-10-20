@@ -67,10 +67,12 @@ Studio 6. Otherwise, run `slt install cmake ninja gcc-arm-none-eabi exx32`.
 
 ## Install
 
-1. Download `commander-flash-<version>.vsix` from this repo's
-   [Releases](https://github.com/kfezer/commander-flash/releases).
-2. In VS Code, open the Command Palette and run **Extensions: Install from
-   VSIX…**, then choose that file.
+1. In VS Code, search the Extensions view for **Commander Flash** and click
+   **Install**. In Cursor, VSCodium or Windsurf, search for it in their
+   extension view (from Open VSX). Or download the `.vsix` from
+   [Releases](https://github.com/kfezer/commander-flash/releases) and run
+   **Extensions: Install from VSIX…**.
+2. Reload the window if VS Code asks.
 3. Click the **⚡ Commander Flash** icon in the Activity Bar, or open the
    **Explorer**, where the **Silicon Labs Boards** panel is under your files.
 
@@ -168,6 +170,11 @@ To put that release on the VS Code Marketplace, upload the `.vsix` at
 <https://marketplace.visualstudio.com/manage> (**Update** on the extension).
 If the repository secret `VSCE_PAT` is set, the workflow publishes to the
 Marketplace by itself instead.
+
+If the repository secret `OVSX_PAT` is set, it also publishes to
+[Open VSX](https://open-vsx.org), the registry used by Cursor, VSCodium and
+Windsurf. To publish an existing tag again (for example, to Open VSX after
+adding the secret), run **Actions → Release → Run workflow** with that tag.
 
 ## License
 
