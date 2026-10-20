@@ -2,7 +2,7 @@
   "name": "commander-flash",
   "displayName": "Commander Flash (unofficial)",
   "description": "Flash, erase and open a serial console on Silicon Labs boards from VS Code, using Simplicity Commander. No Simplicity Studio project needed.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "commander-flash-community",
   "license": "MIT",
   "engines": {
@@ -21,13 +21,20 @@
   "main": "./out/src/extension.js",
   "activationEvents": [
     "onView:commanderFlash.devices",
+    "onView:commanderFlash.explorerBoards",
     "workspaceContains:**/cmake_gcc/CMakePresets.json"
   ],
   "contributes": {
     "views": {
-      "explorer": [
+      "commanderFlash": [
         {
           "id": "commanderFlash.devices",
+          "name": "Boards"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "commanderFlash.explorerBoards",
           "name": "Silicon Labs Boards",
           "icon": "$(circuit-board)"
         }
@@ -40,7 +47,17 @@
         "when": "commanderFlash.state == noCommander"
       },
       {
+        "view": "commanderFlash.explorerBoards",
+        "contents": "Simplicity Commander wasn't found.\n[Install Commander](command:commanderFlash.installCommander)\nAlready have it somewhere else?\n[Set Commander path](command:commanderFlash.setPath)",
+        "when": "commanderFlash.state == noCommander"
+      },
+      {
         "view": "commanderFlash.devices",
+        "contents": "No boards connected. Plug in a board with a USB data cable.\n[Refresh](command:commanderFlash.refresh)\nNeed firmware from a repo?\n[Clone a repository](command:git.clone)",
+        "when": "commanderFlash.state == noBoards"
+      },
+      {
+        "view": "commanderFlash.explorerBoards",
         "contents": "No boards connected. Plug in a board with a USB data cable.\n[Refresh](command:commanderFlash.refresh)\nNeed firmware from a repo?\n[Clone a repository](command:git.clone)",
         "when": "commanderFlash.state == noBoards"
       }
@@ -111,59 +128,59 @@
       "view/title": [
         {
           "command": "commanderFlash.build",
-          "when": "view == commanderFlash.devices",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/",
           "group": "navigation@0"
         },
         {
           "command": "commanderFlash.refresh",
-          "when": "view == commanderFlash.devices",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/",
           "group": "navigation@9"
         }
       ],
       "view/item/context": [
         {
           "command": "commanderFlash.flash",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "inline@0"
         },
         {
           "command": "commanderFlash.debug",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "inline@1"
         },
         {
           "command": "commanderFlash.console",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "inline@2"
         },
         {
           "command": "commanderFlash.flash",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "1_run@0"
         },
         {
           "command": "commanderFlash.debug",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "1_run@1"
         },
         {
           "command": "commanderFlash.console",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "1_run@2"
         },
         {
           "command": "commanderFlash.checkBootloader",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "2_bootloader@0"
         },
         {
           "command": "commanderFlash.installBootloader",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "2_bootloader@1"
         },
         {
           "command": "commanderFlash.erase",
-          "when": "view == commanderFlash.devices && viewItem == board",
+          "when": "view =~ /^commanderFlash\\.(devices|explorerBoards)$/ && viewItem == board",
           "group": "9_danger@0"
         }
       ],
@@ -204,6 +221,15 @@
           "markdownDescription": "Bootloader image per board ID, e.g. `{ \"2601B\": \"/path/to/bootloader.s37\" }`. Adds to or overrides the bundled ones (`2601B`, `2703A`)."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commanderFlash",
+          "title": "Commander Flash",
+          "icon": "$(zap)"
+        }
+      ]
     }
   },
   "scripts": {

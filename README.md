@@ -12,9 +12,10 @@ and flash it.
 
 ## What it does
 
-A **Silicon Labs Boards** panel appears in the **Explorer** sidebar, under
-your files, listing every connected board with its name and J-Link serial
-number. Drag it anywhere you like. Each board row has three buttons:
+The board list appears in two places: behind the **⚡ Commander Flash**
+icon in the Activity Bar, and as a **Silicon Labs Boards** panel in the
+**Explorer**, under your files. It shows every connected board with its
+name and J-Link serial number. Each board row has three buttons:
 
 | Button | Action | What happens |
 |---|---|---|
@@ -70,7 +71,8 @@ Studio 6. Otherwise, run `slt install cmake ninja gcc-arm-none-eabi exx32`.
    [Releases](https://github.com/kfezer/commander-flash/releases).
 2. In VS Code, open the Command Palette and run **Extensions: Install from
    VSIX…**, then choose that file.
-3. Open the **Explorer** sidebar. The **Silicon Labs Boards** panel is under your files.
+3. Click the **⚡ Commander Flash** icon in the Activity Bar, or open the
+   **Explorer**, where the **Silicon Labs Boards** panel is under your files.
 
 ### Don't have Simplicity Commander?
 

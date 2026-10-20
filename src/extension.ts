@@ -12,7 +12,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     log,
+    // Same board list in two places: its own Activity Bar icon, and under the files in the Explorer.
     vscode.window.registerTreeDataProvider("commanderFlash.devices", view),
+    vscode.window.registerTreeDataProvider("commanderFlash.explorerBoards", view),
     vscode.commands.registerCommand("commanderFlash.refresh", () => view.refresh()),
     vscode.commands.registerCommand("commanderFlash.flash", (item) => actions.flash(item)),
     vscode.commands.registerCommand("commanderFlash.flashFile", (uri) => actions.flashFile(uri)),
