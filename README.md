@@ -151,6 +151,20 @@ npm run package   # builds commander-flash-<version>.vsix
 Press F5 in VS Code (with this folder open) to run it in an Extension
 Development Host.
 
+## Releasing
+
+Pushes to `main` run the tests (**CI** workflow). Publishing is automatic
+from a version tag (**Release** workflow):
+
+```bash
+npm version patch          # or minor / major: bumps package.json, commits, tags vX.Y.Z
+git push --follow-tags
+```
+
+The Release workflow checks that the tag matches `package.json`, runs the
+tests, publishes to the VS Code Marketplace, and creates a GitHub release
+with the `.vsix` attached. It needs the repository secret `VSCE_PAT`.
+
 ## License
 
 MIT
