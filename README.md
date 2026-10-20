@@ -162,8 +162,12 @@ git push --follow-tags
 ```
 
 The Release workflow checks that the tag matches `package.json`, runs the
-tests, publishes to the VS Code Marketplace, and creates a GitHub release
-with the `.vsix` attached. It needs the repository secret `VSCE_PAT`.
+tests, and creates a GitHub release with the `.vsix` attached.
+
+To put that release on the VS Code Marketplace, upload the `.vsix` at
+<https://marketplace.visualstudio.com/manage> (**Update** on the extension).
+If the repository secret `VSCE_PAT` is set, the workflow publishes to the
+Marketplace by itself instead.
 
 ## License
 
