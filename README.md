@@ -39,15 +39,26 @@ automatically.
 
 ## Install
 
-1. Install **Simplicity Commander**. It comes with Simplicity Studio 6 and
-   the Silicon Labs installer, or you can
-   [download it on its own](https://www.silabs.com/developer-tools/simplicity-studio/simplicity-commander).
+1. Download `commander-flash-<version>.vsix` from this repo's
+   [Releases](https://github.com/kfezer/commander-flash/releases).
 2. In VS Code, open the Command Palette and run **Extensions: Install from
-   VSIX…**, then choose `commander-flash-0.1.0.vsix`.
+   VSIX…**, then choose that file.
 3. Click the **Commander Flash** (⚡) icon in the Activity Bar.
 
-If the Boards view says Commander wasn't found, click **Set Commander
-path** and choose the `commander` executable.
+### Don't have Simplicity Commander?
+
+The extension finds Commander if Simplicity Studio, the Simplicity
+Installer, or a standalone Commander already put it on your computer. If it
+can't find it, the Boards view offers **Install Commander**, which:
+
+1. uses Silicon Labs' own installer CLI, `slt`. If `slt` isn't already on
+   your computer, it's downloaded from silabs.com (about 13 MB).
+2. runs `slt install commander`, which puts Commander (about 70 MB) in
+   `~/.silabs/slt/installs/archive/`, the same place Simplicity Studio puts it.
+3. saves the path in `commanderFlash.path`.
+
+Commander is Silicon Labs software, under their license terms. If you
+installed it somewhere else, click **Set Commander path** instead.
 
 ## Settings
 
@@ -66,6 +77,18 @@ Where it looks for Commander when `commanderFlash.path` is empty:
 | Linux | `commander` on PATH, `~/.silabs/slt/installs/archive/commander/…`, `/opt/commander/` | No |
 
 If yours isn't found, set `commanderFlash.path`.
+
+## Which boards work
+
+| Feature | Works with |
+|---|---|
+| Board list, Flash, Open Console, Erase | Any board Simplicity Commander can talk to over its J-Link debugger: Silicon Labs Dev Kits, Explorer Kits, Pro Kits, and radio boards on a WSTK/WPK mainboard |
+| Check Bootloader, bootloader guard | EFR32/EFM32 Series 0, 1 and 2 and the xGM modules. The extension reads the chip's part number to find where flash starts (`0x08000000` on xG23 and newer, `0x00000000` on older parts). Not supported on SiWx91x |
+| Install Bootloader (bundled) | The EFR32xG24 Dev Kit (BRD2601B) and xG24 Explorer Kit (BRD2703A). For other boards, supply your own bootloader file |
+| Friendly board names | BRD2601B and BRD2703A. Other boards show Commander's own description |
+
+Tested on hardware: BRD2601B and BRD2703A on macOS. Other boards and
+operating systems should work but haven't been tried.
 
 ## Bundled bootloaders
 

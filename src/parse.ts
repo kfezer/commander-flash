@@ -7,6 +7,8 @@ export interface Board {
   description: string;
 }
 
+const MAINBOARDS = new Set(["4001A", "4002A"]);
+
 /** Parse `commander adapter list --json`. */
 export function parseAdapterList(json: string): Board[] {
   const start = json.indexOf("{");
@@ -16,7 +18,10 @@ export function parseAdapterList(json: string): Board[] {
   const data = JSON.parse(json.slice(start));
   const devices: any[] = data?.result?.devices ?? [];
   return devices.map((d) => {
-    const board = Array.isArray(d.boards) && d.boards.length ? d.boards[0] : {};
+    // Kits with a separate mainboard (WSTK BRD4001A, WPK BRD4002A) list it alongside the
+    // radio board. The radio board is the one the firmware is for.
+    const boards: any[] = Array.isArray(d.boards) ? d.boards : [];
+    const board = boards.find((b) => !MAINBOARDS.has(String(b.board_id).toUpperCase())) ?? boards[0] ?? {};
     return {
       serial: String(d.serial_number),
       boardId: String(board.board_id ?? d.adapter_id ?? "").toUpperCase(),
@@ -97,4 +102,51 @@ export function imageCoversFlashBase(text: string, ext: string, base = 0x0800000
 export function boardHintFromFilename(name: string): string | undefined {
   const m = /brd(\d{4}[a-z])/i.exec(name);
   return m ? m[1].toUpperCase() : undefined;
+}
+
+/**
+ * Where flash starts, from the part number Commander reports.
+ * Series 2 from xG23 on (EFR32xG23+, EFM32PG23+, xGM23x+ modules): 0x08000000.
+ * Series 0/1 and xG21/xG22: 0x00000000. Anything else (e.g. SiWx91x): undefined.
+ */
+export function flashBaseForPart(part: string): number | undefined {
+  const p = part.toUpperCase();
+  const m = /^(?:EFR32|EFM32)[A-Z]{2}(\d)(\d?)/.exec(p) ?? /^(?:BGM|MGM|FGM|ZGM)(\d)(\d)/.exec(p);
+  if (m) {
+    const series = Number(m[1]);
+    const gen = Number(m[2]);
+    return series === 2 && gen >= 3 ? 0x08000000 : 0x00000000;
+  }
+  // Series 0 EFM32 parts: EFM32G, EFM32GG, EFM32LG, EFM32WG, EFM32TG, EFM32ZG, EFM32HG.
+  if (/^EFM32(?:G|GG|LG|WG|TG|ZG|HG)\d/.test(p)) {
+    return 0x00000000;
+  }
+  return undefined;
+}
+
+/** Parse `commander device info --json` → part number. */
+export function parseDeviceInfo(json: string): string | undefined {
+  const start = json.indexOf("{");
+  if (start < 0) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(json.slice(start))?.result?.device_info?.part_number;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Parse `slt where <pkg> --json` → install path. */
+export function parseSltWhere(text: string): string | undefined {
+  const start = text.indexOf("[");
+  if (start < 0) {
+    return undefined;
+  }
+  try {
+    const arr = JSON.parse(text.slice(start));
+    return Array.isArray(arr) && typeof arr[0] === "string" ? arr[0] : undefined;
+  } catch {
+    return undefined;
+  }
 }

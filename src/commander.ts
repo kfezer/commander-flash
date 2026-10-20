@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 import * as vscode from "vscode";
+import { findCommanderExecutable } from "./installer";
 
 export interface RunResult {
   code: number;
@@ -47,12 +48,31 @@ function onPath(): string | undefined {
   return undefined;
 }
 
+/** Anything Silicon Labs' installer (slt) put in ~/.silabs/slt/installs/archive, on any OS. */
+function sltInstalled(): string | undefined {
+  const archive = join(homedir(), ".silabs", "slt", "installs", "archive");
+  let entries: string[];
+  try {
+    entries = readdirSync(archive).filter((e) => /^commander/i.test(e) && !/\.zip$/i.test(e));
+  } catch {
+    return undefined;
+  }
+  // Newest-looking first (e.g. "Commander.app", "commander", "commander-cli").
+  for (const e of entries.sort().reverse()) {
+    const exe = findCommanderExecutable(join(archive, e), 2);
+    if (exe) {
+      return exe;
+    }
+  }
+  return undefined;
+}
+
 export function locateCommander(): string | undefined {
   const configured = vscode.workspace.getConfiguration("commanderFlash").get<string>("path")?.trim();
   if (configured) {
     return existsSync(configured) ? configured : undefined;
   }
-  return onPath() ?? knownLocations().find((p) => existsSync(p));
+  return onPath() ?? knownLocations().find((p) => existsSync(p)) ?? sltInstalled();
 }
 
 export class Commander {
@@ -65,7 +85,16 @@ export class Commander {
   run(args: string[], timeoutMs = 120_000): Promise<RunResult> {
     const exe = this.path;
     if (!exe) {
-      return Promise.reject(new Error("Simplicity Commander wasn't found. Set commanderFlash.path."));
+      vscode.window
+        .showWarningMessage("Simplicity Commander wasn't found.", "Install Commander", "Set Commander Path…")
+        .then((c) => {
+          if (c === "Install Commander") {
+            vscode.commands.executeCommand("commanderFlash.installCommander");
+          } else if (c) {
+            vscode.commands.executeCommand("commanderFlash.setPath");
+          }
+        });
+      return Promise.resolve({ code: -1, stdout: "", stderr: "Commander not found" });
     }
     this.log.appendLine(`$ commander ${args.join(" ")}`);
     return new Promise((resolve) => {

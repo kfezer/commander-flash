@@ -4,12 +4,21 @@ import * as vscode from "vscode";
 import { boardLabel, boardTitle, bootloaderFor } from "./boards";
 import { Commander } from "./commander";
 import { BoardItem, DevicesView } from "./devicesView";
-import { Board, boardHintFromFilename, imageCoversFlashBase, isErased, parseReadmem } from "./parse";
+import {
+  Board,
+  boardHintFromFilename,
+  flashBaseForPart,
+  imageCoversFlashBase,
+  isErased,
+  parseDeviceInfo,
+  parseReadmem,
+} from "./parse";
 
-const FLASH_BASE = "0x08000000";
+const hex = (n: number) => "0x" + n.toString(16).padStart(8, "0");
 
 export class Actions {
   private readonly consoles = new Map<string, vscode.Terminal>();
+  private readonly flashBases = new Map<string, number | null>();
 
   constructor(
     private readonly commander: Commander,
@@ -127,11 +136,14 @@ export class Actions {
     }
 
     // Bootloader guard: an app-only image onto a board with no bootloader won't start.
+    const base = await this.flashBase(board);
     let bringsOwnBootloader = true;
-    try {
-      bringsOwnBootloader = imageCoversFlashBase(readFileSync(file, "utf8"), extname(file));
-    } catch {
-      // Unreadable as text: let Commander decide.
+    if (base !== undefined) {
+      try {
+        bringsOwnBootloader = imageCoversFlashBase(readFileSync(file, "utf8"), extname(file), base);
+      } catch {
+        // Unreadable as text: let Commander decide.
+      }
     }
     if (!bringsOwnBootloader) {
       const present = await this.bootloaderPresent(board);
@@ -191,10 +203,32 @@ export class Actions {
     term.show();
   }
 
-  /** true = present, false = erased, undefined = couldn't read. */
+  /** Start of flash for this board's chip, from its part number. undefined = unknown part. */
+  private async flashBase(board: Board): Promise<number | undefined> {
+    if (!this.flashBases.has(board.serial)) {
+      const r = await this.view.whileBusy(() =>
+        this.commander.run(["device", "info", "--serialno", board.serial, "--json"], 60_000),
+      );
+      const part = r.code === 0 ? parseDeviceInfo(r.stdout) : undefined;
+      const base = part ? flashBaseForPart(part) : undefined;
+      if (part) {
+        this.log.appendLine(`${part}: flash starts at ${base === undefined ? "unknown" : hex(base)}`);
+        // Only cache a real answer; a failed read (board busy, unplugged) is retried next time.
+        this.flashBases.set(board.serial, base ?? null);
+      }
+      return base;
+    }
+    return this.flashBases.get(board.serial) ?? undefined;
+  }
+
+  /** true = present, false = erased, undefined = couldn't read or unsupported part. */
   private async bootloaderPresent(board: Board): Promise<boolean | undefined> {
+    const base = await this.flashBase(board);
+    if (base === undefined) {
+      return undefined;
+    }
     const r = await this.view.whileBusy(() =>
-      this.commander.run(["readmem", "--range", `${FLASH_BASE}:+0x10`, "--serialno", board.serial], 60_000),
+      this.commander.run(["readmem", "--range", `${hex(base)}:+0x10`, "--serialno", board.serial], 60_000),
     );
     const bytes = parseReadmem(r.stdout);
     if (r.code !== 0 || bytes.length === 0) {
@@ -213,7 +247,11 @@ export class Actions {
       () => this.bootloaderPresent(board),
     );
     if (present === undefined) {
-      this.fail(`Couldn't read ${boardTitle(board)}.`);
+      this.fail(
+        (await this.flashBase(board)) === undefined
+          ? `Bootloader check isn't supported for the chip on ${boardTitle(board)}.`
+          : `Couldn't read ${boardTitle(board)}.`,
+      );
     } else if (present) {
       vscode.window.showInformationMessage(`${boardTitle(board)}: bootloader present.`);
     } else {

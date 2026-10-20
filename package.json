@@ -2,7 +2,7 @@
   "name": "commander-flash",
   "displayName": "Commander Flash (unofficial)",
   "description": "Flash, erase and open a serial console on Silicon Labs boards from VS Code, using Simplicity Commander. No Simplicity Studio project needed.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "commander-flash-community",
   "license": "MIT",
   "engines": {
@@ -43,7 +43,7 @@
     "viewsWelcome": [
       {
         "view": "commanderFlash.devices",
-        "contents": "Simplicity Commander wasn't found.\n[Set Commander path](command:commanderFlash.setPath)\n[Download Commander](https://www.silabs.com/developer-tools/simplicity-studio/simplicity-commander)",
+        "contents": "Simplicity Commander wasn't found.\n[Install Commander](command:commanderFlash.installCommander)\nAlready have it somewhere else?\n[Set Commander path](command:commanderFlash.setPath)",
         "when": "commanderFlash.state == noCommander"
       },
       {
@@ -53,33 +53,112 @@
       }
     ],
     "commands": [
-      { "command": "commanderFlash.refresh", "title": "Refresh", "category": "Commander Flash", "icon": "$(refresh)" },
-      { "command": "commanderFlash.setPath", "title": "Set Commander Path…", "category": "Commander Flash" },
-      { "command": "commanderFlash.flash", "title": "Flash…", "category": "Commander Flash", "icon": "$(zap)" },
-      { "command": "commanderFlash.flashFile", "title": "Flash to Board…", "category": "Commander Flash" },
-      { "command": "commanderFlash.console", "title": "Open Console", "category": "Commander Flash", "icon": "$(terminal)" },
-      { "command": "commanderFlash.checkBootloader", "title": "Check Bootloader", "category": "Commander Flash" },
-      { "command": "commanderFlash.installBootloader", "title": "Install Bootloader", "category": "Commander Flash" },
-      { "command": "commanderFlash.erase", "title": "Erase Board…", "category": "Commander Flash" }
+      {
+        "command": "commanderFlash.refresh",
+        "title": "Refresh",
+        "category": "Commander Flash",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "commanderFlash.setPath",
+        "title": "Set Commander Path\u2026",
+        "category": "Commander Flash"
+      },
+      {
+        "command": "commanderFlash.installCommander",
+        "title": "Install Simplicity Commander\u2026",
+        "category": "Commander Flash"
+      },
+      {
+        "command": "commanderFlash.flash",
+        "title": "Flash\u2026",
+        "category": "Commander Flash",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "commanderFlash.flashFile",
+        "title": "Flash to Board\u2026",
+        "category": "Commander Flash"
+      },
+      {
+        "command": "commanderFlash.console",
+        "title": "Open Console",
+        "category": "Commander Flash",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "commanderFlash.checkBootloader",
+        "title": "Check Bootloader",
+        "category": "Commander Flash"
+      },
+      {
+        "command": "commanderFlash.installBootloader",
+        "title": "Install Bootloader",
+        "category": "Commander Flash"
+      },
+      {
+        "command": "commanderFlash.erase",
+        "title": "Erase Board\u2026",
+        "category": "Commander Flash"
+      }
     ],
     "menus": {
       "view/title": [
-        { "command": "commanderFlash.refresh", "when": "view == commanderFlash.devices", "group": "navigation" }
+        {
+          "command": "commanderFlash.refresh",
+          "when": "view == commanderFlash.devices",
+          "group": "navigation"
+        }
       ],
       "view/item/context": [
-        { "command": "commanderFlash.flash", "when": "view == commanderFlash.devices && viewItem == board", "group": "inline@0" },
-        { "command": "commanderFlash.console", "when": "view == commanderFlash.devices && viewItem == board", "group": "inline@1" },
-        { "command": "commanderFlash.flash", "when": "view == commanderFlash.devices && viewItem == board", "group": "1_flash@0" },
-        { "command": "commanderFlash.console", "when": "view == commanderFlash.devices && viewItem == board", "group": "1_flash@1" },
-        { "command": "commanderFlash.checkBootloader", "when": "view == commanderFlash.devices && viewItem == board", "group": "2_bootloader@0" },
-        { "command": "commanderFlash.installBootloader", "when": "view == commanderFlash.devices && viewItem == board", "group": "2_bootloader@1" },
-        { "command": "commanderFlash.erase", "when": "view == commanderFlash.devices && viewItem == board", "group": "9_danger@0" }
+        {
+          "command": "commanderFlash.flash",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "inline@0"
+        },
+        {
+          "command": "commanderFlash.console",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "inline@1"
+        },
+        {
+          "command": "commanderFlash.flash",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "1_flash@0"
+        },
+        {
+          "command": "commanderFlash.console",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "1_flash@1"
+        },
+        {
+          "command": "commanderFlash.checkBootloader",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "2_bootloader@0"
+        },
+        {
+          "command": "commanderFlash.installBootloader",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "2_bootloader@1"
+        },
+        {
+          "command": "commanderFlash.erase",
+          "when": "view == commanderFlash.devices && viewItem == board",
+          "group": "9_danger@0"
+        }
       ],
       "explorer/context": [
-        { "command": "commanderFlash.flashFile", "when": "resourceExtname =~ /^\\.(hex|s37)$/i", "group": "navigation@99" }
+        {
+          "command": "commanderFlash.flashFile",
+          "when": "resourceExtname =~ /^\\.(hex|s37)$/i",
+          "group": "navigation@99"
+        }
       ],
       "commandPalette": [
-        { "command": "commanderFlash.flashFile", "when": "false" }
+        {
+          "command": "commanderFlash.flashFile",
+          "when": "false"
+        }
       ]
     },
     "configuration": {
@@ -99,7 +178,9 @@
         "commanderFlash.bootloaders": {
           "type": "object",
           "default": {},
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": {
+            "type": "string"
+          },
           "markdownDescription": "Bootloader image per board ID, e.g. `{ \"2601B\": \"/path/to/bootloader.s37\" }`. Adds to or overrides the bundled ones (`2601B`, `2703A`)."
         }
       }
@@ -115,5 +196,9 @@
     "@types/vscode": "~1.90.0",
     "@vscode/vsce": "^3.2.0",
     "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kfezer/commander-flash.git"
   }
 }

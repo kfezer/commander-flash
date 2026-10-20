@@ -4,6 +4,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   boardHintFromFilename,
+  flashBaseForPart,
+  parseDeviceInfo,
+  parseSltWhere,
   imageCoversFlashBase,
   isErased,
   parseAdapterList,
@@ -66,4 +69,36 @@ test("boardHintFromFilename", () => {
 test("bundled bootloaders start with an S0 header (Commander rejects them otherwise)", () => {
   const text = fixture("../../bootloaders/xg24-internal-single-1536k.s37");
   assert.match(text.split(/\r?\n/)[0], /^S0/);
+});
+
+test("parseAdapterList prefers the radio board over a WSTK/WPK mainboard", () => {
+  const json = JSON.stringify({ result: { devices: [{ serial_number: 1, adapter_id: "4002A", boards: [
+    { board_id: "4002A", board_description: "Wireless Pro Kit Mainboard" },
+    { board_id: "4186C", board_description: "EFR32xG24 Radio Board" },
+  ] }] } });
+  const [b] = parseAdapterList(json);
+  assert.equal(b.boardId, "4186C");
+  assert.match(b.description, /Radio Board/);
+});
+
+test("flashBaseForPart", () => {
+  assert.equal(flashBaseForPart("EFR32MG24B310F1536IM48"), 0x08000000);
+  assert.equal(flashBaseForPart("EFR32ZG23B020F512IM48"), 0x08000000);
+  assert.equal(flashBaseForPart("EFM32PG28B310F1024IM68"), 0x08000000);
+  assert.equal(flashBaseForPart("MGM240PB32VNA"), 0x08000000);
+  assert.equal(flashBaseForPart("EFR32MG21A010F1024IM32"), 0x00000000);
+  assert.equal(flashBaseForPart("EFR32BG22C224F512IM40"), 0x00000000);
+  assert.equal(flashBaseForPart("BGM220PC22HNA"), 0x00000000);
+  assert.equal(flashBaseForPart("EFR32MG12P332F1024GL125"), 0x00000000);
+  assert.equal(flashBaseForPart("EFM32GG990F1024"), 0x00000000);
+  assert.equal(flashBaseForPart("EFR32MG1P232F256GM48"), 0x00000000);
+  assert.equal(flashBaseForPart("EFM32G890F128"), 0x00000000);
+  assert.equal(flashBaseForPart("SIWG917M111MGTBA"), undefined);
+});
+
+test("parseDeviceInfo and parseSltWhere", () => {
+  assert.equal(parseDeviceInfo('{"result":{"device_info":{"part_number":"EFR32MG24B310F1536IM48"}},"success":true}'), "EFR32MG24B310F1536IM48");
+  assert.equal(parseDeviceInfo("garbage"), undefined);
+  assert.equal(parseSltWhere('[\n "/home/u/.silabs/slt/installs/archive/Commander.app"\n]'), "/home/u/.silabs/slt/installs/archive/Commander.app");
+  assert.equal(parseSltWhere("not installed"), undefined);
 });
