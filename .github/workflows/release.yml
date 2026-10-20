@@ -58,8 +58,8 @@ jobs:
         if: env.OVSX_PAT != ''
         run: |
           publisher="$(node -p "require('./package.json').publisher")"
-          npx ovsx create-namespace "$publisher" -p "$OVSX_PAT" || true   # already exists after the first run
-          npx ovsx publish *.vsix -p "$OVSX_PAT"
+          npx --yes ovsx create-namespace "$publisher" -p "$OVSX_PAT" || true   # already exists after the first run
+          npx --yes ovsx publish *.vsix -p "$OVSX_PAT"
 
       - name: GitHub release with the .vsix
         run: |
