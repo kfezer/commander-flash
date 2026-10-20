@@ -3,6 +3,8 @@ import { basename, extname } from "node:path";
 import * as vscode from "vscode";
 import { boardLabel, boardTitle, bootloaderFor } from "./boards";
 import { Commander } from "./commander";
+import { findProjects, output, Project } from "./projects";
+import { buildEnvPath, findTools } from "./tools";
 import { BoardItem, DevicesView } from "./devicesView";
 import {
   Board,
@@ -19,12 +21,14 @@ const hex = (n: number) => "0x" + n.toString(16).padStart(8, "0");
 export class Actions {
   private readonly consoles = new Map<string, vscode.Terminal>();
   private readonly flashBases = new Map<string, number | null>();
+  private readonly parts = new Map<string, string>();
 
   constructor(
     private readonly commander: Commander,
     private readonly view: DevicesView,
     private readonly log: vscode.OutputChannel,
     private readonly extensionPath: string,
+    private readonly storageDir: string,
   ) {
     vscode.window.onDidCloseTerminal((t) => {
       for (const [serial, term] of this.consoles) {
@@ -182,6 +186,156 @@ export class Actions {
     return false;
   }
 
+  // ---- build / debug (Silicon Labs CMake projects) ----
+
+  private async pickProject(purpose: string): Promise<Project | undefined> {
+    const projects = await findProjects();
+    if (projects.length === 0) {
+      vscode.window.showWarningMessage(
+        "No Silicon Labs CMake project in this folder (looking for cmake_gcc/CMakePresets.json). Generate the project for the VS Code or CMake target.",
+      );
+      return undefined;
+    }
+    if (projects.length === 1) {
+      return projects[0];
+    }
+    const pick = await vscode.window.showQuickPick(
+      projects.map((p) => ({ label: p.name, description: vscode.workspace.asRelativePath(p.root, false), p })),
+      { placeHolder: purpose },
+    );
+    return pick?.p;
+  }
+
+  async build(): Promise<Project | undefined> {
+    const project = await this.pickProject("Build which project?");
+    if (!project) {
+      return undefined;
+    }
+    return (await this.buildProject(project)) ? project : undefined;
+  }
+
+  /** Runs `cmake --workflow --preset <preset>` as a VS Code task, so errors show in Problems. */
+  private async buildProject(project: Project): Promise<boolean> {
+    const tools = await findTools(this.storageDir);
+    if (!tools.cmake) {
+      this.fail("CMake wasn't found. Install it with Silicon Labs' installer (slt install cmake ninja gcc-arm-none-eabi) or put it on PATH.");
+      return false;
+    }
+    const task = new vscode.Task(
+      { type: "commanderFlash", project: project.name },
+      vscode.TaskScope.Workspace,
+      `Build ${project.name}`,
+      "Commander Flash",
+      new vscode.ProcessExecution(tools.cmake, ["--workflow", "--preset", project.workflowPreset], {
+        cwd: project.cmakeDir,
+        env: { PATH: buildEnvPath(tools) },
+      }),
+      "$gcc",
+    );
+    task.group = vscode.TaskGroup.Build;
+    task.presentationOptions = { reveal: vscode.TaskRevealKind.Always, clear: true };
+    const execution = await vscode.tasks.executeTask(task);
+    const code = await new Promise<number | undefined>((resolve) => {
+      const sub = vscode.tasks.onDidEndTaskProcess((e) => {
+        if (e.execution === execution) {
+          sub.dispose();
+          resolve(e.exitCode);
+        }
+      });
+    });
+    if (code === 0) {
+      vscode.window.showInformationMessage(`Built ${project.name}.`);
+      return true;
+    }
+    vscode.window.showErrorMessage(`Building ${project.name} failed. See the terminal and the Problems panel.`);
+    return false;
+  }
+
+  async debug(item?: BoardItem): Promise<void> {
+    const board = await this.pickBoard(item, "Debug on which board?");
+    if (!board) {
+      return;
+    }
+    const project = await this.pickProject(`Debug which project on ${boardTitle(board)}?`);
+    if (!project) {
+      return;
+    }
+    if (!vscode.extensions.getExtension("marus25.cortex-debug")) {
+      const go = await vscode.window.showWarningMessage(
+        "Debugging uses the Cortex-Debug extension, which isn't installed.",
+        "Install Cortex-Debug",
+      );
+      if (go) {
+        await vscode.commands.executeCommand("workbench.extensions.installExtension", "marus25.cortex-debug");
+      }
+      return;
+    }
+    const tools = await findTools(this.storageDir);
+    if (!tools.jlinkGdbServer || !tools.gdb) {
+      this.fail(
+        `Missing debug tools: ${[!tools.jlinkGdbServer && "J-Link GDB server", !tools.gdb && "arm-none-eabi-gdb"].filter(Boolean).join(", ")}. Install them with Silicon Labs' installer (slt install exx32 gcc-arm-none-eabi).`,
+      );
+      return;
+    }
+
+    // Always build first, like Silicon Labs' extension does.
+    if (!(await this.buildProject(project))) {
+      return;
+    }
+    const elf = output(project, ".out");
+    if (!elf) {
+      this.fail(`Built ${project.name}, but no .out file was found in its build folder.`);
+      return;
+    }
+
+    // An app needs a bootloader on the board; Cortex-Debug only loads the app itself.
+    const base = await this.flashBase(board);
+    const image = output(project, ".s37") ?? output(project, ".hex");
+    if (base !== undefined && image) {
+      let covers = true;
+      try {
+        covers = imageCoversFlashBase(readFileSync(image, "utf8"), extname(image), base);
+      } catch {
+        // keep going
+      }
+      if (!covers && (await this.bootloaderPresent(board)) === false) {
+        const go = await vscode.window.showWarningMessage(
+          `${boardTitle(board)} has no bootloader, so ${project.name} won't start under the debugger.`,
+          { modal: true },
+          "Install bootloader, then debug",
+          "Debug anyway",
+        );
+        if (!go) {
+          return;
+        }
+        if (go === "Install bootloader, then debug" && !(await this.installBootloaderOn(board))) {
+          return;
+        }
+      }
+    }
+
+    const part = this.parts.get(board.serial);
+    if (!part) {
+      this.fail(`Couldn't read the chip on ${boardTitle(board)}.`);
+      return;
+    }
+    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.root));
+    await vscode.debug.startDebugging(folder, {
+      name: `Debug ${project.name} on ${boardLabel(board)}`,
+      type: "cortex-debug",
+      request: "launch",
+      servertype: "jlink",
+      serverpath: tools.jlinkGdbServer,
+      gdbPath: tools.gdb,
+      device: part,
+      interface: "swd",
+      serialNumber: board.serial,
+      executable: elf,
+      cwd: project.root,
+      runToEntryPoint: "main",
+    });
+  }
+
   async console(item?: BoardItem): Promise<void> {
     const board = await this.pickBoard(item, "Open the console of which board?");
     const exe = this.commander.path;
@@ -197,7 +351,7 @@ export class Actions {
       name: `Console · ${boardLabel(board)} (${board.serial})`,
       shellPath: exe,
       shellArgs: ["vcom", "connect", "--serialno", board.serial],
-      iconPath: new vscode.ThemeIcon("terminal"),
+      iconPath: new vscode.ThemeIcon("terminal", new vscode.ThemeColor("terminal.ansiGreen")),
     });
     this.consoles.set(board.serial, term);
     term.show();
@@ -207,11 +361,12 @@ export class Actions {
   private async flashBase(board: Board): Promise<number | undefined> {
     if (!this.flashBases.has(board.serial)) {
       const r = await this.view.whileBusy(() =>
-        this.commander.run(["device", "info", "--serialno", board.serial, "--json"], 60_000),
+        this.commander.read(["device", "info", "--serialno", board.serial, "--json"], 60_000),
       );
       const part = r.code === 0 ? parseDeviceInfo(r.stdout) : undefined;
       const base = part ? flashBaseForPart(part) : undefined;
       if (part) {
+        this.parts.set(board.serial, part);
         this.log.appendLine(`${part}: flash starts at ${base === undefined ? "unknown" : hex(base)}`);
         // Only cache a real answer; a failed read (board busy, unplugged) is retried next time.
         this.flashBases.set(board.serial, base ?? null);
@@ -228,7 +383,7 @@ export class Actions {
       return undefined;
     }
     const r = await this.view.whileBusy(() =>
-      this.commander.run(["readmem", "--range", `${hex(base)}:+0x10`, "--serialno", board.serial], 60_000),
+      this.commander.read(["readmem", "--range", `${hex(base)}:+0x10`, "--serialno", board.serial], 60_000),
     );
     const bytes = parseReadmem(r.stdout);
     if (r.code !== 0 || bytes.length === 0) {

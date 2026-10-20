@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel("Commander");
   const commander = new Commander(log);
   const view = new DevicesView(commander);
-  const actions = new Actions(commander, view, log, context.extensionPath);
+  const actions = new Actions(commander, view, log, context.extensionPath, context.globalStorageUri.fsPath);
 
   context.subscriptions.push(
     log,
@@ -17,6 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("commanderFlash.flash", (item) => actions.flash(item)),
     vscode.commands.registerCommand("commanderFlash.flashFile", (uri) => actions.flashFile(uri)),
     vscode.commands.registerCommand("commanderFlash.console", (item) => actions.console(item)),
+    vscode.commands.registerCommand("commanderFlash.build", () => actions.build()),
+    vscode.commands.registerCommand("commanderFlash.debug", (item) => actions.debug(item)),
     vscode.commands.registerCommand("commanderFlash.checkBootloader", (item) => actions.checkBootloader(item)),
     vscode.commands.registerCommand("commanderFlash.installBootloader", (item) => actions.installBootloader(item)),
     vscode.commands.registerCommand("commanderFlash.erase", (item) => actions.erase(item)),

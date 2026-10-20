@@ -12,14 +12,21 @@ and flash it.
 
 ## What it does
 
-A **Commander Flash** icon in the Activity Bar opens a **Boards** list of
-every connected board, with its name and J-Link serial number. Right-click
-a board (or use the inline buttons):
+A **Silicon Labs Boards** panel appears in the **Explorer** sidebar, under
+your files, listing every connected board with its name and J-Link serial
+number. Drag it anywhere you like. Each board row has three buttons:
+
+| Button | Action | What happens |
+|---|---|---|
+| ⚡ | **Flash…** | Choose a `.hex` / `.s37` from the open folder (or browse), and flash it to that board |
+| 🐞 | **Debug…** | Builds the project, then starts a debug session on that board (breakpoints, stepping, variables), stopping at `main` |
+| ⌨ | **Open Console** | Opens the board's serial console in a VS Code terminal (`commander vcom connect`). Type straight into it; close the terminal to disconnect |
+
+The panel's title bar has **🔧 Build Project** and **Refresh**. Right-click
+a board for more:
 
 | Action | What happens |
 |---|---|
-| **Flash…** | Choose a `.hex` / `.s37` from the open folder (or browse), and flash it to that board |
-| **Open Console** | Opens the board's serial console in a VS Code terminal (`commander vcom connect`). Type straight into it; close the terminal to disconnect |
 | **Check Bootloader** | Reads the first bytes of flash. All `FF` means there's no bootloader |
 | **Install Bootloader** | Flashes a bootloader for that board (bundled for the boards below, or your own) |
 | **Erase Board…** | Mass-erases the chip, bootloader included, after you confirm |
@@ -27,6 +34,26 @@ a board (or use the inline buttons):
 You can also right-click a `.hex` or `.s37` file in the Explorer and choose
 **Flash to Board…**. With only one board plugged in, it's picked
 automatically.
+
+### Build and Debug
+
+These work on Silicon Labs projects generated for the **VS Code** or
+**CMake** target, meaning any folder with a `cmake_gcc/CMakePresets.json`.
+
+- **Build** runs `cmake --workflow --preset project` as a VS Code task, so
+  compiler errors show up in the **Problems** panel. The outputs (`.out`,
+  `.s37`, `.hex`) go to `cmake_gcc/build/<configuration>/` and appear in
+  the Flash file list.
+- **Debug** builds first, then launches
+  [Cortex-Debug](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug)
+  with SEGGER's J-Link GDB server on the board you picked. If Cortex-Debug
+  isn't installed, you're offered the install. If the board has no
+  bootloader and the app needs one, you're offered to install it first.
+
+Build and Debug use the tools Silicon Labs' installer (`slt`) manages:
+`cmake`, `ninja`, `gcc-arm-none-eabi` (which includes `gdb`) and `exx32`
+(the J-Link GDB server). These are already there if you have Simplicity
+Studio 6. Otherwise, run `slt install cmake ninja gcc-arm-none-eabi exx32`.
 
 ### Safety checks before flashing
 
@@ -43,13 +70,13 @@ automatically.
    [Releases](https://github.com/kfezer/commander-flash/releases).
 2. In VS Code, open the Command Palette and run **Extensions: Install from
    VSIX…**, then choose that file.
-3. Click the **Commander Flash** (⚡) icon in the Activity Bar.
+3. Open the **Explorer** sidebar. The **Silicon Labs Boards** panel is under your files.
 
 ### Don't have Simplicity Commander?
 
 The extension finds Commander if Simplicity Studio, the Simplicity
 Installer, or a standalone Commander already put it on your computer. If it
-can't find it, the Boards view offers **Install Commander**, which:
+can't find it, the Silicon Labs Boards panel offers **Install Commander**, which:
 
 1. uses Silicon Labs' own installer CLI, `slt`. If `slt` isn't already on
    your computer, it's downloaded from silabs.com (about 13 MB).
@@ -82,12 +109,12 @@ If yours isn't found, set `commanderFlash.path`.
 
 | Feature | Works with |
 |---|---|
-| Board list, Flash, Open Console, Erase | Any board Simplicity Commander can talk to over its J-Link debugger: Silicon Labs Dev Kits, Explorer Kits, Pro Kits, and radio boards on a WSTK/WPK mainboard |
+| Board list, Flash, Open Console, Erase, Debug | Any board Simplicity Commander can talk to over its J-Link debugger: Silicon Labs Dev Kits, Explorer Kits, Pro Kits, and radio boards on a WSTK/WPK mainboard |
 | Check Bootloader, bootloader guard | EFR32/EFM32 Series 0, 1 and 2 and the xGM modules. The extension reads the chip's part number to find where flash starts (`0x08000000` on xG23 and newer, `0x00000000` on older parts). Not supported on SiWx91x |
 | Install Bootloader (bundled) | The EFR32xG24 Dev Kit (BRD2601B) and xG24 Explorer Kit (BRD2703A). For other boards, supply your own bootloader file |
 | Friendly board names | BRD2601B and BRD2703A. Other boards show Commander's own description |
 
-Tested on hardware: BRD2601B and BRD2703A on macOS. Other boards and
+Tested on hardware: BRD2601B and BRD2703A on macOS. Build was tested with a clean build of a generated Zigbee project. Debug was tested by running the same J-Link GDB server and gdb that the Debug button uses (connect, halt, backtrace into `main`); the Cortex-Debug session itself hasn't been tested here. Other boards and
 operating systems should work but haven't been tried.
 
 ## Bundled bootloaders

@@ -28,7 +28,7 @@ function sltZipName(): string | undefined {
 }
 
 /** An slt that's already installed: the one other Silicon Labs tools registered, or the GUI installer's copy. */
-function existingSlt(storageDir: string): string | undefined {
+export function existingSlt(storageDir: string): string | undefined {
   const candidates: string[] = [];
   try {
     candidates.push(readFileSync(join(homedir(), ".silabs", "slt", "slt.location"), "utf8").trim());

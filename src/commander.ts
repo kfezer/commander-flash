@@ -82,6 +82,20 @@ export class Commander {
     return locateCommander();
   }
 
+  /**
+   * For read-only commands (adapter list, device info, readmem): retry once after a short
+   * pause. The J-Link can be briefly busy, e.g. when another Silicon Labs tool polls it.
+   */
+  async read(args: string[], timeoutMs = 60_000): Promise<RunResult> {
+    const first = await this.run(args, timeoutMs);
+    if (first.code === 0 || first.code === -1) {
+      return first;
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    this.log.appendLine("(retrying)");
+    return this.run(args, timeoutMs);
+  }
+
   run(args: string[], timeoutMs = 120_000): Promise<RunResult> {
     const exe = this.path;
     if (!exe) {

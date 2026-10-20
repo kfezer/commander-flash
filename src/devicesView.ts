@@ -41,7 +41,7 @@ export class DevicesView implements vscode.TreeDataProvider<BoardItem> {
         this.boards = [];
         await this.setState("noCommander");
       } else {
-        const r = await this.commander.run(["adapter", "list", "--json"], 30_000);
+        const r = await this.commander.read(["adapter", "list", "--json"], 30_000);
         try {
           this.boards = parseAdapterList(r.stdout);
         } catch {
